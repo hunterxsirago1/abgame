@@ -1,0 +1,325 @@
+:root {
+    --bg-color: #0e1525;
+    --surface-color: #1a2333;
+    --text-color: #ffffff;
+    --text-dim: #94a3b8;
+    
+    --color-green: #6aaa64;
+    --color-yellow: #c9b458;
+    --color-purple: #818cf8; /* A nice indigo/purple for different word present */
+    --color-gray: #3a3a3c;
+    --color-border: #3a3a3c;
+    
+    --key-bg: #818384;
+    --key-text: #ffffff;
+    
+    --cyan-accent: #06b6d4;
+    
+    --font-main: 'Nunito', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-main);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#app {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Home View */
+.home-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 2rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.logo-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.logo-cell {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.logo-cell.green { background-color: var(--color-green); }
+.logo-cell.yellow { background-color: var(--color-yellow); }
+.logo-cell.purple { background-color: var(--color-purple); }
+
+.home-title {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.home-subtitle {
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    margin-top: -1.5rem;
+}
+
+.play-button {
+    background-color: var(--cyan-accent);
+    color: white;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+}
+
+.play-button:hover {
+    background-color: #0891b2;
+    transform: translateY(-2px);
+}
+
+.secondary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.action-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s;
+}
+
+.action-link:hover {
+    color: white;
+}
+
+/* Game View */
+.game-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+    background-color: var(--surface-color);
+    color: white;
+}
+
+/* Grid Styles */
+.game-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.phrase-row {
+    display: flex;
+    gap: 1.5rem; /* Noticeable gap between words */
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap; /* Allow wrapping on small screens to avoid scroll */
+}
+
+.word-group {
+    display: flex;
+    gap: 4px;
+}
+
+.tile {
+    width: clamp(35px, 8vw, 45px);
+    height: clamp(35px, 8vw, 45px);
+    border: 2px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    border-radius: 6px;
+    transition: border-color 0.1s;
+}
+
+.tile.filled {
+    border-color: #565758;
+    animation: pop 0.1s ease-in-out;
+}
+
+.phrase-row.revealed .tile {
+    border: none;
+    color: white;
+}
+
+/* Keyboard status colors */
+.key.green { background-color: var(--color-green); }
+.key.yellow { background-color: var(--color-yellow); }
+.key.purple { background-color: var(--color-purple); }
+.key.gray { background-color: var(--color-gray); }
+
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Color states */
+.tile.green { background-color: var(--color-green); border-color: var(--color-green); }
+.tile.yellow { background-color: var(--color-yellow); border-color: var(--color-yellow); }
+.tile.purple { background-color: var(--color-purple); border-color: var(--color-purple); }
+.tile.gray { background-color: var(--color-gray); border-color: var(--color-gray); }
+
+/* Keyboard Styles */
+.keyboard {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    user-select: none;
+    background-color: var(--bg-color);
+}
+
+.kb-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.key {
+    background-color: var(--key-bg);
+    color: var(--key-text);
+    border: none;
+    border-radius: 4px;
+    flex: 1;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.1s;
+}
+
+.key:active {
+    background-color: #4a5568;
+}
+
+.key.wide {
+    flex: 1.5;
+    font-size: 0.9rem;
+}
+
+.key.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+@media (max-width: 400px) {
+    .key {
+        height: 50px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Modal */
+.hidden { display: none !important; }
+
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+}
+
+#modal-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--surface-color);
+    width: 90%;
+    max-width: 450px;
+    border-radius: 16px;
+    padding: 2rem;
+    z-index: 1001;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Animations */
+.flip {
+    animation: flip 0.6s ease-in-out;
+}
+
+.shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes flip {
+    0% { transform: rotateX(0); }
+    50% { transform: rotateX(90deg); }
+    100% { transform: rotateX(0); }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
