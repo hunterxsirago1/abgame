@@ -139,22 +139,22 @@ class ExpressoGame {
         this.render();
     }
 
-    getInvalidWord() {
+    isValidGuess() {
         // Construct phrase with spaces to use validator
         let chars = this.currentGuess.split('');
         let guessWords = [];
         this.words.forEach(w => {
-            guessWords.push(chars.splice(0, w.length).join('').toUpperCase());
+            guessWords.push(chars.splice(0, w.length).join(''));
         });
 
-        for (const word of guessWords) {
-            if (window.validator && window.validator.isLoaded) {
-                if (!window.validator.isValid(word)) return word;
-            } else if (!this.dictionary.has(word)) {
-                return word;
-            }
+        const reconstructedPhrase = guessWords.join(' ');
+
+        if (window.validator && window.validator.isLoaded) {
+            return window.validator.validatePhrase(reconstructedPhrase, { debug: true });
         }
-        return null;
+
+        // Fallback to internal dictionary
+        return guessWords.every(word => this.dictionary.has(word.toUpperCase()));
     }
 
     submitGuess() {
@@ -168,9 +168,8 @@ class ExpressoGame {
             return;
         }
 
-        const invalidWord = this.getInvalidWord();
-        if (invalidWord) {
-            this.showMessage(`${invalidWord} not in word list`);
+        if (!this.isValidGuess()) {
+            this.showMessage("Not in word list");
             this.triggerShake();
             setTimeout(() => { this.isSubmitting = false; }, 500); // Small cooldown
             return;
