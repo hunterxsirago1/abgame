@@ -129,6 +129,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 }
 
 .header {
@@ -158,12 +159,25 @@ body {
 .game-content {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem; /* Tighter gap between rows */
+    gap: 12px;
+    /* Custom scrollbar for better look */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
     width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+.game-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.game-content::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 10px;
 }
 
 .phrase-row {
@@ -195,7 +209,16 @@ body {
 
 .tile.filled {
     border-color: #565758;
-    animation: pop 0.1s ease-in-out;
+}
+
+.tile.cursor {
+    border-color: #565758;
+    background-color: rgba(255, 255, 255, 0.05); /* Very subtle overlay */
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.current-input .tile {
+    cursor: pointer;
 }
 
 .phrase-row.revealed .tile {
@@ -223,12 +246,14 @@ body {
 
 /* Keyboard Styles */
 .keyboard {
-    padding: 1rem;
+    padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     gap: 8px;
     user-select: none;
     background-color: var(--bg-color);
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-border);
 }
 
 .kb-row {
@@ -325,4 +350,34 @@ body {
     20%, 80% { transform: translate3d(0.5px, 0, 0); }
     30%, 50%, 70% { transform: translate3d(-1px, 0, 0); }
     40%, 60% { transform: translate3d(1px, 0, 0); }
+}
+/* Toasts */
+#toast-container {
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.game-toast {
+    background: #ffffff;
+    color: #000000;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: pop 0.2s ease-out;
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+@keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }

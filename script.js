@@ -26,6 +26,7 @@ class ExpressoGame {
         this.keyboardState = {}; // { A: 'green', B: 'yellow', ... }
         this.status = "playing"; // playing, won, lost
         this.view = "home"; // home, game
+        this.isSubmitting = false;
         
         this.init();
     }
@@ -104,7 +105,7 @@ class ExpressoGame {
     }
 
     addLetter(letter) {
-        if (this.status !== 'playing') return;
+        if (this.status !== 'playing' || this.isSubmitting) return;
         const maxLength = this.targetPhrase.replace(/ /g, '').length;
         
         let chars = this.currentGuess.split('');
@@ -118,7 +119,7 @@ class ExpressoGame {
     }
 
     removeLetter() {
-        if (this.status !== 'playing') return;
+        if (this.status !== 'playing' || this.isSubmitting) return; // Add isSubmitting guard
         let chars = this.currentGuess.split('');
         
         if (chars[this.cursorIndex] !== " ") {
@@ -133,7 +134,7 @@ class ExpressoGame {
     }
 
     setCursor(idx) {
-        if (this.status !== 'playing') return;
+        if (this.status !== 'playing' || this.isSubmitting) return; // Add isSubmitting guard
         this.cursorIndex = idx;
         this.render();
     }
@@ -157,15 +158,20 @@ class ExpressoGame {
     }
 
     submitGuess() {
+        if (this.status !== 'playing' || this.isSubmitting) return;
+        this.isSubmitting = true;
+
         if (this.currentGuess.includes(' ')) {
             this.showMessage("Phrase incomplete");
             this.triggerShake();
+            setTimeout(() => { this.isSubmitting = false; }, 500); // Small cooldown
             return;
         }
 
         if (!this.isValidGuess()) {
             this.showMessage("Not in word list");
             this.triggerShake();
+            setTimeout(() => { this.isSubmitting = false; }, 500); // Small cooldown
             return;
         }
 
@@ -188,6 +194,7 @@ class ExpressoGame {
             const maxLength = this.targetPhrase.replace(/ /g, '').length;
             this.currentGuess = " ".repeat(maxLength);
             this.cursorIndex = 0;
+            this.isSubmitting = false;
             this.render();
         }, 1500); // Wait for animations
     }
@@ -201,16 +208,22 @@ class ExpressoGame {
     }
 
     showMessage(msg) {
-        // Simple toast or just console for now, but let's do a simple overlay
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        // Prevent duplicate messages of the same type within a short window
+        if (Array.from(container.children).some(child => child.textContent === msg)) return;
+
         const toast = document.createElement('div');
+        toast.className = 'game-toast';
         toast.textContent = msg;
-        toast.style.cssText = `
-            position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
-            background: #eee; color: #333; padding: 10px 20px; border-radius: 5px;
-            font-weight: 800; z-index: 2000; animation: pop 0.2s ease-out;
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+        container.appendChild(toast);
+
+        // Remove after animation
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 1500);
     }
 
     updateKeyboardState(guess, feedback) {
