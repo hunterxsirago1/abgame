@@ -188,6 +188,7 @@ function App() {
         <CalendarView 
           onBack={() => setView('home')} 
           onSelectDate={(date) => {
+            setIsUnlimited(false);
             setDateKey(date);
             setView('game');
           }}
