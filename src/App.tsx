@@ -77,7 +77,7 @@ function App() {
             activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
-  }, [game.guesses.length, game.currentGuess, view]);
+  }, [game.guesses.length, view]);
 
   useEffect(() => {
     wordValidator.loadDictionary().finally(() => {
@@ -127,9 +127,9 @@ function App() {
 
   const startUnlimited = () => {
     setIsUnlimited(true);
-    // Generate a random date from the last 300 days
+    // Generate a random date from the last 300 days (excluding today)
     const d = new Date();
-    d.setDate(d.getDate() - Math.floor(Math.random() * 300));
+    d.setDate(d.getDate() - (1 + Math.floor(Math.random() * 300)));
     setDateKey(toDateKey(d));
     setView('game');
   };
@@ -203,7 +203,10 @@ function App() {
               <BackArrowIcon />
             </button>
             <div className="flex flex-col items-center">
-              <div className="font-extrabold tracking-widest text-sm">AB GAME</div>
+              <div className="flex items-center gap-2">
+                <div className="font-extrabold tracking-widest text-sm">AB GAME</div>
+                {isUnlimited && <span className="bg-indigo-600 text-[10px] px-2 py-0.5 rounded-full font-black text-white">UNLIMITED</span>}
+              </div>
               <div className="text-[10px] text-dim font-bold">{dateKey}</div>
             </div>
             <button className="icon-btn">

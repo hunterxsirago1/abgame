@@ -118,18 +118,18 @@ export const useGameState = (dateKey: string) => {
     });
   };
 
-  const calculateFeedback = (guess: string, target: string): FeedbackColor[] => {
-    const targetWords = target.split(' ');
-    const guessLetters = guess.split('');
+  const calculateFeedback = (guess: string, targetPhrase: string): FeedbackColor[] => {
     const targetIndices: { char: string; wordIdx: number; used: boolean }[] = [];
+    const targetWords = targetPhrase.split(' ');
     
     targetWords.forEach((word, wIdx) => {
       for (let i = 0; i < word.length; i++) {
-        targetIndices.push({ char: word[i], wordIdx: wIdx, used: false });
+        targetIndices.push({ char: word[i].toUpperCase(), wordIdx: wIdx, used: false });
       }
     });
 
-    const result: FeedbackColor[] = new Array(guessLetters.length).fill('gray');
+    const result: FeedbackColor[] = new Array(guess.length).fill('gray');
+    const guessLetters = guess.toUpperCase().split('');
 
     // 1. Green
     guessLetters.forEach((char, i) => {
@@ -150,7 +150,7 @@ export const useGameState = (dateKey: string) => {
       }
     });
 
-    // 3. Purple (Elsewhere)
+    // 3. Purple (Elsewhere in phrase)
     guessLetters.forEach((char, i) => {
       if (result[i] !== 'gray') return;
       const match = targetIndices.find(t => !t.used && t.char === char);
@@ -220,7 +220,7 @@ export const useGameState = (dateKey: string) => {
 
     setIsSubmitting(true);
     
-    const feedback = calculateFeedback(currentGuess, targetPhrase.replace(/ /g, ''));
+    const feedback = calculateFeedback(currentGuess, targetPhrase);
     const newGuess: Guess = { phrase: currentGuess, feedback };
     const newGuesses = [...guesses, newGuess];
     

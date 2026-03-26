@@ -22,7 +22,7 @@ const Row: React.FC<RowProps> = ({
   shouldShake
 }) => {
   const words = targetPhrase.split(' ');
-  let globalIdx = 0;
+  let wordStartIdx = 0;
 
   const rowClasses = [
     'phrase-row',
@@ -36,27 +36,28 @@ const Row: React.FC<RowProps> = ({
       {words.map((word, wIdx) => {
         const wordTiles = [];
         for (let i = 0; i < word.length; i++) {
-          const char = guess[globalIdx] || ' ';
-          const f = feedback ? feedback[globalIdx] : undefined;
-          const idx = globalIdx;
+          const charIdx = wordStartIdx + i;
+          const char = guess[charIdx] || ' ';
+          const f = feedback ? feedback[charIdx] : undefined;
           
           wordTiles.push(
             <Tile 
-              key={idx}
+              key={`${wIdx}-${i}`}
               char={char}
               feedback={f}
               isFilled={char !== ' '}
-              isCursor={isCurrent && idx === cursorIndex}
-              onClick={() => isCurrent && onTileClick?.(idx)}
-              animationDelay={f ? i * 100 : 0}
+              isCursor={isCurrent && charIdx === cursorIndex}
+              onClick={() => isCurrent && onTileClick?.(charIdx)}
+              animationDelay={f ? charIdx * 100 : 0}
             />
           );
-          globalIdx++;
         }
+        wordStartIdx += word.length;
         
         return (
           <div key={wIdx} className="word-group">
             {wordTiles}
+            {/* Add extra space after word group except for the last word */}
           </div>
         );
       })}
