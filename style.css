@@ -31,6 +31,7 @@ body {
     font-family: var(--font-main);
     overflow: hidden;
     height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
 }
@@ -159,6 +160,7 @@ body {
 .game-content {
     flex: 1;
     overflow-y: auto;
+    min-height: 0; /* CRITICAL for flexbox scrolling */
     padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column;
