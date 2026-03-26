@@ -137,9 +137,6 @@ class ExpressoGame {
         if (this.currentGuess === this.targetPhrase.replace(/ /g, '')) {
             this.status = "won";
             setTimeout(() => this.showModal('win'), 2500);
-        } else if (this.history.length >= CONFIG.MAX_ATTEMPTS) {
-            this.status = "lost";
-            setTimeout(() => this.showModal('loss'), 2500);
         }
 
         setTimeout(() => {
@@ -316,15 +313,17 @@ class ExpressoGame {
 
     renderGrid() {
         let rows = "";
-        for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
-            if (i < this.history.length) {
-                rows += `<div class="phrase-row revealed">${this.renderRow(this.history[i].guess, this.history[i].feedback)}</div>`;
-            } else if (i === this.currentAttempt && this.status === 'playing') {
-                rows += `<div class="phrase-row">${this.renderRow(this.currentGuess)}</div>`;
-            } else {
-                rows += `<div class="phrase-row">${this.renderRow("")}</div>`;
-            }
+        
+        // Only render past guesses
+        this.history.forEach((attempt, i) => {
+            rows += `<div class="phrase-row revealed">${this.renderRow(attempt.guess, attempt.feedback)}</div>`;
+        });
+
+        // Only render ONE current input row (if still playing)
+        if (this.status === 'playing') {
+            rows += `<div class="phrase-row current-input">${this.renderRow(this.currentGuess)}</div>`;
         }
+
         return rows;
     }
 
