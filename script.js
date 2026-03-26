@@ -37,14 +37,25 @@ class ExpressoGame {
 
     async loadData() {
         try {
+            // Load game data
             const response = await fetch('data.json');
             const data = await response.json();
             this.phrases = data.phrases;
-            this.dictionary = new Set(data.dictionary.map(w => w.toUpperCase()));
-            // Ensure target words are in dictionary
-            this.phrases.forEach(phrase => {
-                phrase.split(' ').forEach(word => this.dictionary.add(word.toUpperCase()));
-            });
+            
+            // Initialize high-performance validator
+            if (window.validator) {
+                await window.validator.loadDictionary('dictionary.json');
+            } else {
+                // Fallback to basic dictionary if validator not found
+                this.dictionary = new Set(data.dictionary.map(w => w.toUpperCase()));
+            }
+
+            // Ensure target words are in dictionary if using fallback
+            if (this.dictionary.size > 0) {
+                this.phrases.forEach(phrase => {
+                    phrase.split(' ').forEach(word => this.dictionary.add(word.toUpperCase()));
+                });
+            }
         } catch (error) {
             console.error("Failed to load game data:", error);
             // Fallback
@@ -96,20 +107,21 @@ class ExpressoGame {
     }
 
     isValidGuess() {
-        // Split currentGuess back into words based on targetPhrase structure
+        // Construct phrase with spaces to use validator
         let chars = this.currentGuess.split('');
         let guessWords = [];
         this.words.forEach(w => {
             guessWords.push(chars.splice(0, w.length).join(''));
         });
 
-        // Check each word in dictionary
-        for (let word of guessWords) {
-            if (!this.dictionary.has(word)) {
-                return false;
-            }
+        const reconstructedPhrase = guessWords.join(' ');
+
+        if (window.validator && window.validator.isLoaded) {
+            return window.validator.validatePhrase(reconstructedPhrase, { debug: true });
         }
-        return true;
+
+        // Fallback to internal dictionary
+        return guessWords.every(word => this.dictionary.has(word.toUpperCase()));
     }
 
     submitGuess() {
