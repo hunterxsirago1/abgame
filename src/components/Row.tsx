@@ -9,6 +9,7 @@ interface RowProps {
   isCurrent?: boolean;
   onTileClick?: (idx: number) => void;
   cursorIndex?: number;
+  shouldShake?: boolean;
 }
 
 const Row: React.FC<RowProps> = ({ 
@@ -17,13 +18,21 @@ const Row: React.FC<RowProps> = ({
   feedback, 
   isCurrent, 
   onTileClick,
-  cursorIndex 
+  cursorIndex,
+  shouldShake
 }) => {
   const words = targetPhrase.split(' ');
   let globalIdx = 0;
 
+  const rowClasses = [
+    'phrase-row',
+    feedback ? 'revealed' : '',
+    isCurrent ? 'current-input' : '',
+    shouldShake ? 'shake' : ''
+  ].join(' ').trim();
+
   return (
-    <div className={`phrase-row ${feedback ? 'revealed' : ''} ${isCurrent ? 'current-input' : ''}`}>
+    <div className={rowClasses}>
       {words.map((word, wIdx) => {
         const wordTiles = [];
         for (let i = 0; i < word.length; i++) {

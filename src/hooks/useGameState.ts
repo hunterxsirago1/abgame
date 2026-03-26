@@ -17,7 +17,6 @@ export interface GameProgress {
 }
 
 const MAX_ATTEMPTS = 999; // Effectively unlimited as requested
-const FUTURE_RESERVE = 30;
 const STORAGE_KEY = 'abgame_progress';
 
 // Date Helpers
@@ -37,26 +36,32 @@ const addDays = (date: Date, n: number) => {
 };
 
 // Phrase Mapping
+const EPOCH = new Date('2024-01-01T00:00:00Z');
+
 export const getPhraseForDate = (dateKey: string) => {
-  const targetDate = new Date(dateKey + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const targetDate = new Date(dateKey + 'T00:00:00Z');
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  // No access to future dates
+  if (targetDate > today) return null;
 
   const total = phrases.length;
-  const todayIndex = total - FUTURE_RESERVE;
+  if (total === 0) return null;
+
+  // Calculate days since Epoch for a stable index
+  const diffTime = targetDate.getTime() - EPOCH.getTime();
+  const dayIndex = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
-  // Find offset from today
-  const diffTime = targetDate.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  // Deterministic "shuffle" mapping
+  // We use a linear congruential generator pattern to pick a non-sequential index
+  // 31337 is prime, 7 is offset, total is the mod
+  const phraseIndex = Math.abs((dayIndex * 31337 + 7) % total);
   
-  const targetIndex = todayIndex + diffDays;
-  
-  if (targetIndex < 0 || targetIndex >= total) return null;
-  return phrases[targetIndex].toUpperCase();
+  return phrases[phraseIndex].toUpperCase();
 };
 
-export const useGameState = (initialDateKey: string | null) => {
-  const [dateKey, setDateKey] = useState<string>(initialDateKey || todayKey());
+export const useGameState = (dateKey: string) => {
   const [targetPhrase, setTargetPhrase] = useState<string>('');
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [currentGuess, setCurrentGuess] = useState<string>('');
@@ -64,6 +69,7 @@ export const useGameState = (initialDateKey: string | null) => {
   const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keyboardState, setKeyboardState] = useState<Record<string, FeedbackColor>>({});
+  const [shouldShake, setShouldShake] = useState(false);
 
   // Initialize game for a date
   useEffect(() => {
@@ -91,6 +97,13 @@ export const useGameState = (initialDateKey: string | null) => {
       setCurrentGuess(' '.repeat(phrase.replace(/ /g, '').length));
       setCursorIndex(0);
       console.log(`[DEV] Target phrase for ${dateKey}: ${phrase}`);
+    } else {
+      setTargetPhrase('');
+      setGuesses([]);
+      setStatus('playing');
+      setKeyboardState({});
+      setCurrentGuess('');
+      setCursorIndex(0);
     }
   }, [dateKey]);
 
@@ -184,6 +197,8 @@ export const useGameState = (initialDateKey: string | null) => {
     if (status !== 'playing' || isSubmitting) return;
     
     if (currentGuess.includes(' ')) {
+      setShouldShake(true);
+      setTimeout(() => setShouldShake(false), 500);
       return { error: 'Phrase incomplete' };
     }
 
@@ -198,6 +213,8 @@ export const useGameState = (initialDateKey: string | null) => {
 
     const invalidWord = wordValidator.getInvalidToken(guessWords.join(' '));
     if (invalidWord) {
+      setShouldShake(true);
+      setTimeout(() => setShouldShake(false), 500);
       return { error: `${invalidWord.toUpperCase()} not in dictionary` };
     }
 
@@ -236,7 +253,6 @@ export const useGameState = (initialDateKey: string | null) => {
 
   return {
     dateKey,
-    setDateKey,
     targetPhrase,
     guesses,
     currentGuess,
@@ -245,6 +261,7 @@ export const useGameState = (initialDateKey: string | null) => {
     status,
     isSubmitting,
     keyboardState,
+    shouldShake,
     addLetter,
     removeLetter,
     submitGuess,

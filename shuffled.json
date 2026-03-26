@@ -1,4 +1,4 @@
-export const phrases = [
+[
   "DEAD FROM THE NECK UP",
   "UP IN THE AIR",
   "MAN IS BEST FRIEND",
@@ -1185,4 +1185,4 @@ export const phrases = [
   "THROW A CURVE",
   "TAKE THE PLUNGE",
   "HAVE HELL TO PAY"
-];
+]

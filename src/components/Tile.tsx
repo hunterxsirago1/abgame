@@ -21,8 +21,9 @@ const Tile: React.FC<TileProps> = ({
   const className = [
     'tile',
     isFilled ? 'filled' : '',
+    isFilled && !feedback ? 'pop' : '',
     isCursor ? 'cursor' : '',
-    feedback || ''
+    feedback ? `flip ${feedback}` : ''
   ].join(' ').trim();
 
   return (

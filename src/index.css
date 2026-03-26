@@ -30,10 +30,11 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: var(--font-main);
-  overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
+  overflow-y: scroll; /* Forces scrollbar to preserve centering */
+  scrollbar-gutter: stable;
 }
 
 #root {
@@ -41,12 +42,14 @@ body {
 }
 
 #app {
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
 }
 
 /* Home View */
@@ -54,12 +57,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
+  justify-content: flex-start;
+  min-height: 100vh;
   gap: 1.5rem;
-  padding: 2rem;
+  padding: 10vh 2rem 5rem;
   text-align: center;
-  overflow-y: auto;
 }
 
 .logo-container {
@@ -166,15 +168,11 @@ body {
 
 .game-content {
   flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
+  padding: 1rem 1rem 5rem;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  scrollbar-width: none;
 }
-
-.game-content::-webkit-scrollbar { display: none; }
 
 /* Grid Styles */
 .phrase-row {
@@ -284,45 +282,77 @@ body {
 
 .cal-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+
+.cal-weekday-header {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  padding-bottom: 8px;
+  text-transform: uppercase;
 }
 
 .cal-day {
+  aspect-ratio: 1;
   background: var(--surface-color);
   border: 1px solid var(--color-border);
-  padding: 1rem;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cal-day-top {
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-dim);
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s, border-color 0.1s;
 }
 
-.cal-daynum {
-  font-size: 1.5rem;
-  font-weight: 900;
+.cal-day:hover {
+    border-color: var(--cyan-accent);
 }
 
-.cal-attempts {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-dim);
+.cal-day.empty {
+  background: none;
+  border: none;
+  cursor: default;
 }
 
-.cal-day--completed { border-color: var(--color-green); }
-.cal-day--attempted { border-color: var(--color-yellow); }
-.cal-status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.green-dot { background: var(--color-green); }
-.yellow-dot { background: var(--color-yellow); }
+.cal-day--completed { 
+    background: var(--color-green); 
+    border-color: var(--color-green);
+    color: white;
+}
+.cal-day--attempted { 
+    border-color: var(--color-yellow);
+    box-shadow: inset 0 0 0 2px var(--color-yellow);
+}
+.cal-day--today {
+    border-color: var(--cyan-accent);
+    color: var(--cyan-accent);
+}
+
+.cal-day--future {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+    border-style: dotted;
+}
+
+.cal-month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.cal-month-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+}
 
 /* Components */
 .icon-btn {
@@ -383,3 +413,42 @@ body {
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 .text-2xl { font-size: 1.5rem; }
 .font-black { font-weight: 900; }
+
+/* Animations */
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flip {
+  0% { transform: rotateX(0); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+.tile.pop {
+  animation: pop 0.1s ease-in-out;
+}
+
+.tile.flip {
+  animation: flip 0.5s ease-in-out;
+}
+
+.shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Delay reveals */
+.tile.flip:nth-child(2) { animation-delay: 0.1s; }
+.tile.flip:nth-child(3) { animation-delay: 0.2s; }
+.tile.flip:nth-child(4) { animation-delay: 0.3s; }
+.tile.flip:nth-child(5) { animation-delay: 0.4s; }
+.tile.flip:nth-child(6) { animation-delay: 0.5s; }
