@@ -94,10 +94,17 @@ function App() {
     const result = await game.submitGuess();
     if (result?.error) {
       showToast(result.error);
-    } else if (result?.won) {
-      setTimeout(() => setShowModal('win'), 2000);
-    } else if (result?.lost) {
-      setTimeout(() => setShowModal('lost'), 2000);
+    } else if (result?.success) {
+      // Wait for animation delay
+      if (result.delay) {
+        await new Promise(resolve => setTimeout(resolve, result.delay));
+      }
+      
+      if (result.won) {
+        setShowModal('win');
+      } else if (result.lost) {
+        setShowModal('lost');
+      }
     }
   }, [game.submitGuess]);
 
@@ -225,6 +232,7 @@ function App() {
                 isCurrent 
                 onTileClick={game.setCursorIndex}
                 cursorIndex={game.cursorIndex}
+                feedback={game.revealingFeedback || undefined}
                 shouldShake={game.shouldShake}
               />
             )}
