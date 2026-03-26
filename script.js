@@ -21,6 +21,7 @@ class ExpressoGame {
         this.words = [];
         this.currentAttempt = 0;
         this.currentGuess = "";
+        this.cursorIndex = 0;
         this.history = []; // Array of {guess, feedback}
         this.keyboardState = {}; // { A: 'green', B: 'yellow', ... }
         this.status = "playing"; // playing, won, lost
@@ -38,7 +39,7 @@ class ExpressoGame {
     async loadData() {
         try {
             // Load game data
-            const response = await fetch('data.json');
+            const response = await fetch('phrases.json');
             const data = await response.json();
             this.phrases = data.phrases;
             
@@ -46,12 +47,18 @@ class ExpressoGame {
             if (window.validator) {
                 await window.validator.loadDictionary('dictionary.json');
             } else {
-                // Fallback to basic dictionary if validator not found
-                this.dictionary = new Set(data.dictionary.map(w => w.toUpperCase()));
+                // Fallback: Try to load dictionary.json directly if validator not found
+                try {
+                    const dictResponse = await fetch('dictionary.json');
+                    const dictData = await dictResponse.json();
+                    this.dictionary = new Set(dictData.map(w => w.toUpperCase()));
+                } catch (e) {
+                    console.error("Failed to load dictionary fallback:", e);
+                }
             }
 
             // Ensure target words are in dictionary if using fallback
-            if (this.dictionary.size > 0) {
+            if (this.dictionary && this.dictionary.size > 0) {
                 this.phrases.forEach(phrase => {
                     phrase.split(' ').forEach(word => this.dictionary.add(word.toUpperCase()));
                 });
@@ -67,12 +74,17 @@ class ExpressoGame {
     setRandomPhrase() {
         this.targetPhrase = this.phrases[Math.floor(Math.random() * this.phrases.length)].toUpperCase();
         this.words = this.targetPhrase.split(' ');
+        const maxLength = this.targetPhrase.replace(/ /g, '').length;
+        this.currentGuess = " ".repeat(maxLength);
+        this.cursorIndex = 0;
         this.reset();
     }
 
     reset() {
         this.currentAttempt = 0;
-        this.currentGuess = "";
+        const maxLength = this.targetPhrase.replace(/ /g, '').length;
+        this.currentGuess = " ".repeat(maxLength);
+        this.cursorIndex = 0;
         this.history = [];
         this.keyboardState = {};
         this.status = "playing";
@@ -92,18 +104,38 @@ class ExpressoGame {
     }
 
     addLetter(letter) {
+        if (this.status !== 'playing') return;
         const maxLength = this.targetPhrase.replace(/ /g, '').length;
-        if (this.currentGuess.length < maxLength) {
-            this.currentGuess += letter.toUpperCase();
-            this.render();
+        
+        let chars = this.currentGuess.split('');
+        chars[this.cursorIndex] = letter.toUpperCase();
+        this.currentGuess = chars.join('');
+        
+        if (this.cursorIndex < maxLength - 1) {
+            this.cursorIndex++;
         }
+        this.render();
     }
 
     removeLetter() {
-        if (this.currentGuess.length > 0) {
-            this.currentGuess = this.currentGuess.slice(0, -1);
-            this.render();
+        if (this.status !== 'playing') return;
+        let chars = this.currentGuess.split('');
+        
+        if (chars[this.cursorIndex] !== " ") {
+            chars[this.cursorIndex] = " ";
+        } else if (this.cursorIndex > 0) {
+            this.cursorIndex--;
+            chars[this.cursorIndex] = " ";
         }
+        
+        this.currentGuess = chars.join('');
+        this.render();
+    }
+
+    setCursor(idx) {
+        if (this.status !== 'playing') return;
+        this.cursorIndex = idx;
+        this.render();
     }
 
     isValidGuess() {
@@ -125,8 +157,8 @@ class ExpressoGame {
     }
 
     submitGuess() {
-        const maxLength = this.targetPhrase.replace(/ /g, '').length;
-        if (this.currentGuess.length < maxLength) {
+        if (this.currentGuess.includes(' ')) {
+            this.showMessage("Phrase incomplete");
             this.triggerShake();
             return;
         }
@@ -153,7 +185,9 @@ class ExpressoGame {
 
         setTimeout(() => {
             this.currentAttempt++;
-            this.currentGuess = "";
+            const maxLength = this.targetPhrase.replace(/ /g, '').length;
+            this.currentGuess = " ".repeat(maxLength);
+            this.cursorIndex = 0;
             this.render();
         }, 1500); // Wait for animations
     }
@@ -333,24 +367,30 @@ class ExpressoGame {
 
         // Only render ONE current input row (if still playing)
         if (this.status === 'playing') {
-            rows += `<div class="phrase-row current-input">${this.renderRow(this.currentGuess)}</div>`;
+            rows += `<div class="phrase-row current-input">${this.renderRow(this.currentGuess, null, true)}</div>`;
         }
 
         return rows;
     }
 
-    renderRow(guess, feedback = null) {
+    renderRow(guess, feedback = null, isCurrentRow = false) {
         let html = "";
-        let charIdx = 0;
+        let globalCharIdx = 0;
         
         this.words.forEach((word, wIdx) => {
             html += `<div class="word-group">`;
             for (let i = 0; i < word.length; i++) {
-                const char = guess[charIdx] || "";
-                const color = feedback ? feedback[charIdx] : "";
-                const isFilled = char !== "";
-                html += `<div class="tile ${isFilled ? 'filled' : ''} ${color}">${char}</div>`;
-                charIdx++;
+                const char = guess[globalCharIdx] || "";
+                const color = feedback ? feedback[globalCharIdx] : "";
+                const isFilled = char !== "" && char !== " ";
+                const isCursor = isCurrentRow && globalCharIdx === this.cursorIndex;
+                
+                const clickHandler = isCurrentRow ? `onclick="game.setCursor(${globalCharIdx})"` : "";
+                
+                html += `<div class="tile ${isFilled ? 'filled' : ''} ${isCursor ? 'cursor' : ''} ${color}" ${clickHandler}>
+                    ${char === " " ? "" : char}
+                </div>`;
+                globalCharIdx++;
             }
             html += `</div>`;
         });
