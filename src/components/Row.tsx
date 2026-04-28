@@ -10,6 +10,7 @@ interface RowProps {
   onTileClick?: (idx: number) => void;
   cursorIndex?: number;
   shouldShake?: boolean;
+  isRevealing?: boolean;
 }
 
 const Row: React.FC<RowProps> = ({ 
@@ -19,7 +20,8 @@ const Row: React.FC<RowProps> = ({
   isCurrent, 
   onTileClick,
   cursorIndex,
-  shouldShake
+  shouldShake,
+  isRevealing = false
 }) => {
   const words = targetPhrase.split(' ');
   let wordStartIdx = 0;
@@ -49,6 +51,7 @@ const Row: React.FC<RowProps> = ({
               isCursor={isCurrent && charIdx === cursorIndex}
               onClick={() => isCurrent && onTileClick?.(charIdx)}
               animationDelay={f ? charIdx * 100 : 0}
+              isRevealing={isRevealing}
             />
           );
         }

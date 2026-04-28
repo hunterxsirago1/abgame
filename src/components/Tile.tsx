@@ -8,6 +8,7 @@ interface TileProps {
   isCursor?: boolean;
   onClick?: () => void;
   animationDelay?: number;
+  isRevealing?: boolean;
 }
 
 const Tile: React.FC<TileProps> = ({ 
@@ -16,14 +17,16 @@ const Tile: React.FC<TileProps> = ({
   isFilled, 
   isCursor, 
   onClick,
-  animationDelay = 0 
+  animationDelay = 0,
+  isRevealing = false
 }) => {
   const className = [
     'tile',
     isFilled ? 'filled' : '',
     isFilled && !feedback ? 'pop' : '',
     isCursor ? 'cursor' : '',
-    feedback ? `flip ${feedback}` : ''
+    feedback && isRevealing ? `flip ${feedback}` : '',
+    feedback && !isRevealing ? `revealed-${feedback}` : ''
   ].join(' ').trim();
 
   return (

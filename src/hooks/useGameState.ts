@@ -7,6 +7,7 @@ export type FeedbackColor = 'green' | 'yellow' | 'purple' | 'gray';
 export interface Guess {
   phrase: string;
   feedback: FeedbackColor[];
+  isRevealing?: boolean;
 }
 
 export interface GameProgress {
@@ -29,11 +30,6 @@ export const toDateKey = (date: Date) => {
 
 export const todayKey = () => toDateKey(new Date());
 
-const addDays = (date: Date, n: number) => {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-};
 
 // Phrase Mapping
 const EPOCH = new Date('2024-01-01T00:00:00Z');
@@ -64,14 +60,18 @@ export const getPhraseForDate = (dateKey: string) => {
 export const useGameState = (dateKey: string) => {
   const [targetPhrase, setTargetPhrase] = useState<string>('');
   const [guesses, setGuesses] = useState<Guess[]>([]);
-  const [currentGuess, setCurrentGuess] = useState<string>('');
-  const [cursorIndex, setCursorIndex] = useState<number>(0);
+  const [inputState, setInputState] = useState({ phrase: '', cursor: 0 });
   const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRevealing, setIsRevealing] = useState(false);
-  const [revealingFeedback, setRevealingFeedback] = useState<FeedbackColor[] | null>(null);
   const [keyboardState, setKeyboardState] = useState<Record<string, FeedbackColor>>({});
   const [shouldShake, setShouldShake] = useState(false);
+
+  const currentGuess = inputState.phrase;
+  const cursorIndex = inputState.cursor;
+
+  const setCursorIndex = (cursor: number) => {
+    setInputState(prev => ({ ...prev, cursor }));
+  };
 
   // Initialize game for a date
   useEffect(() => {
@@ -96,21 +96,18 @@ export const useGameState = (dateKey: string) => {
         setStatus('playing');
         setKeyboardState({});
       }
-      setCurrentGuess(' '.repeat(phrase.replace(/ /g, '').length));
-      setCursorIndex(0);
-      setIsRevealing(false);
-      setRevealingFeedback(null);
+      setInputState({
+        phrase: ' '.repeat(phrase.replace(/ /g, '').length),
+        cursor: 0
+      });
       setIsSubmitting(false);
-      console.log(`[DEV] Target phrase for ${dateKey}: ${phrase}`);
+
     } else {
       setTargetPhrase('');
       setGuesses([]);
       setStatus('playing');
       setKeyboardState({});
-      setCurrentGuess('');
-      setCursorIndex(0);
-      setIsRevealing(false);
-      setRevealingFeedback(null);
+      setInputState({ phrase: '', cursor: 0 });
       setIsSubmitting(false);
     }
   }, [dateKey]);
@@ -172,37 +169,43 @@ export const useGameState = (dateKey: string) => {
   };
 
   const addLetter = useCallback((letter: string) => {
-    if (status !== 'playing' || isSubmitting || isRevealing) return;
+    if (status !== 'playing') return;
     const maxLength = targetPhrase.replace(/ /g, '').length;
     
-    setCurrentGuess(prev => {
-      const chars = prev.split('');
-      chars[cursorIndex] = letter.toUpperCase();
-      return chars.join('');
+    setInputState(prev => {
+      const chars = prev.phrase.split('');
+      chars[prev.cursor] = letter.toUpperCase();
+      return {
+        phrase: chars.join(''),
+        cursor: prev.cursor < maxLength - 1 ? prev.cursor + 1 : prev.cursor
+      };
     });
-
-    setCursorIndex(prev => (prev < maxLength - 1 ? prev + 1 : prev));
-  }, [status, isSubmitting, isRevealing, targetPhrase, cursorIndex]);
+  }, [status, isSubmitting, targetPhrase]);
 
   const removeLetter = useCallback(() => {
-    if (status !== 'playing' || isSubmitting || isRevealing) return;
+    if (status !== 'playing') return;
     
-    setCurrentGuess(prev => {
-      const chars = prev.split('');
-      if (chars[cursorIndex] !== ' ') {
-        chars[cursorIndex] = ' ';
-        return chars.join('');
-      } else if (cursorIndex > 0) {
-        setCursorIndex(prevIdx => prevIdx - 1);
-        chars[cursorIndex - 1] = ' ';
-        return chars.join('');
+    setInputState(prev => {
+      const chars = prev.phrase.split('');
+      let newCursor = prev.cursor;
+      
+      if (chars[prev.cursor] !== ' ') {
+        chars[prev.cursor] = ' ';
+        // Stay at same position
+      } else if (prev.cursor > 0) {
+        newCursor = prev.cursor - 1;
+        chars[newCursor] = ' ';
       }
-      return prev;
+      
+      return {
+        phrase: chars.join(''),
+        cursor: newCursor
+      };
     });
-  }, [status, isSubmitting, isRevealing, cursorIndex]);
+  }, [status, isSubmitting]);
 
   const submitGuess = async () => {
-    if (status !== 'playing' || isSubmitting || isRevealing) return;
+    if (status !== 'playing' || isSubmitting) return;
     
     if (currentGuess.includes(' ')) {
       setShouldShake(true);
@@ -227,43 +230,50 @@ export const useGameState = (dateKey: string) => {
     }
 
     setIsSubmitting(true);
-    setIsRevealing(true);
     
     const feedback = calculateFeedback(currentGuess, targetPhrase);
-    setRevealingFeedback(feedback);
-    
     const phraseLength = targetPhrase.replace(/ /g, '').length;
-    const revealDuration = (phraseLength * 100) + 650; // Stagger + Flip duration + small pause
+    const revealDuration = (phraseLength * 100) + 650;
 
     const won = currentGuess === targetPhrase.replace(/ /g, '');
-    const lost = false; 
+    const lost = guesses.length + 1 >= MAX_ATTEMPTS; // Not really reachable but for consistency
     const newStatus = won ? 'won' : lost ? 'lost' : 'playing';
 
-    // Return immediately to trigger UI feedback, but delay sequence
-    setTimeout(() => {
-      const newGuess: Guess = { phrase: currentGuess, feedback };
-      const newGuesses = [...guesses, newGuess];
-      
-      const newKeyboardState = { ...keyboardState };
-      updateKeyboardMap(currentGuess, feedback, newKeyboardState);
-      
-      setGuesses(newGuesses);
-      setStatus(newStatus);
-      setKeyboardState(newKeyboardState);
-      setCurrentGuess(' '.repeat(phraseLength));
-      setCursorIndex(0);
-      setIsRevealing(false);
-      setIsSubmitting(false);
-      setRevealingFeedback(null);
+    const newGuess: Guess = { phrase: currentGuess, feedback, isRevealing: true };
+    const newGuesses = [...guesses, newGuess];
+    
+    // 1. Move guess to history and reset input IMMEDIATELY
+    setGuesses(newGuesses);
+    setInputState({
+      phrase: ' '.repeat(phraseLength),
+      cursor: 0
+    });
+    
+    // 2. Update keyboard state immediately for "fast" feel
+    const newKeyboardState = { ...keyboardState };
+    updateKeyboardMap(currentGuess, feedback, newKeyboardState);
+    setKeyboardState(newKeyboardState);
 
-      localStorage.setItem(`${STORAGE_KEY}_${dateKey}`, JSON.stringify({
-        guesses: newGuesses,
-        status: newStatus
-      }));
+    // 3. Set a timeout to clear the "revealing" state for this specific guess
+    setTimeout(() => {
+      setGuesses(prev => prev.map((g, idx) => 
+        idx === prev.length - 1 ? { ...g, isRevealing: false } : g
+      ));
+      
+      if (won || lost) {
+        setStatus(newStatus);
+      }
+      
+      setIsSubmitting(false);
     }, revealDuration);
 
-    // Return the result immediately so handleEnter can show modals LATER (after delay)
-    return { success: true, won, lost, delay: revealDuration };
+    // Persist immediately
+    localStorage.setItem(`${STORAGE_KEY}_${dateKey}`, JSON.stringify({
+      guesses: newGuesses.map(g => ({ ...g, isRevealing: false })), // Don't save transient state
+      status: newStatus
+    }));
+
+    return { success: true, won, lost, delay: revealDuration, finalGuesses: newGuesses };
   };
 
   return {
@@ -275,8 +285,6 @@ export const useGameState = (dateKey: string) => {
     setCursorIndex,
     status,
     isSubmitting,
-    isRevealing,
-    revealingFeedback,
     keyboardState,
     shouldShake,
     addLetter,
